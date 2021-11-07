@@ -25,8 +25,7 @@ LOGIN
 EOF
 }
 
-allItems=""
-
+# Edit fzf-command to change appearance
 fzf-command () {
     if [[ -v TMUX ]]; then
         # Edit this if you use tmux and want to change the appearance
@@ -36,6 +35,8 @@ fzf-command () {
         fzf --height=25% --layout=reverse $*
     fi
 }
+
+allItems=""
 
 get-item () {
     if [[ -z $allItems ]]; then

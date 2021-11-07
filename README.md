@@ -12,7 +12,10 @@
 - **fzf**    
     used for getting user input
 
-## Documentation
+## Installation
+Make sure you have installed the requirments then simply clone this repository and move bwf to anywhere on your path.
+
+## Usage
 
 ```
 Bitwarden using fzf
