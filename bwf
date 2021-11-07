@@ -17,6 +17,11 @@ CLIPBOARD
     Uses xclip to paste username into clipboard and
     password to primary selection.
 
+LOGIN
+    To be logged in make sure to set the environment variable
+    BW_SESSION to your session key. To get the session key
+    run 'bw login'
+
 EOF
 }
 
