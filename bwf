@@ -10,14 +10,15 @@ Usage
     bwf [options]
 
 OPTIONS
-    -x, --clipboard insert into clipbaord (default)
-    -h, --help      display this help message
-    -p, --password  print password to stdout
-    -u, --username  print username to stdout
+    -x, --clipboard     insert into clipbaord (default)
+    -h, --help          display this help message
+    -p, --password      print password to stdout
+    -u, --username      print username to stdout
 
 CLIPBOARD
     Uses xclip to paste username into clipboard and
     password to primary selection.
+
 EOF
 }
 
