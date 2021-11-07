@@ -1,7 +1,5 @@
 #!/bin/zsh
 
-allItems=""
-
 usage () {
     cat <<EOF
 Bitwarden using fzf
@@ -22,17 +20,22 @@ CLIPBOARD
 EOF
 }
 
+allItems=""
+
 fzf-command () {
     if [[ -v TMUX ]]; then
         # Edit this if you use tmux and want to change the appearance
-        fzf-tmux -p 40% -w 30% $* 
+        fzf-tmux -p 40% -w 30% $*
     else
         # Edit this if you don't use tmux and want to change the appearance
-        fzf --height=25% --layout=reverse $* 
+        fzf --height=25% --layout=reverse $*
     fi
 }
 
 get-item () {
+    if [[ -z $allItems ]]; then
+        allItems=$(bw list items)
+    fi
     jq -r '.[] | .name' <<< "${allItems}" | fzf-command
 }
 
@@ -91,6 +94,10 @@ while [[ "$#" -gt 0 ]]; do
 done
 allItems=$(bw list items)
 item=$(get-item)
+if [ -z $item]; then
+    exit 1
+fi
+
 if [ $clipboard -gt 0 ];
 then
     insert-clipboard $item
