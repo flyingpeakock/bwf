@@ -57,37 +57,51 @@ insert-clipboard () {
     if [ "$#" -gt 0 ]; then
         item=$*
     else
-        echo "here"
         item=$(get-item)
     fi
     get-user $item | xclip -selection clipboard -i 
     get-password $item | xclip -selection primary
 }
 
-allItems=$(bw list items)
+
 clipboard="1"
-item=$(get-item)
+pass="0"
+usern="0"
 while [[ "$#" -gt 0 ]]; do
     case $1 in
         -h|--help) usage; exit 0;;
         -p|--password) 
-            get-password $item
+            # get-password $item
+            pass="1"
             clipboard="0"
             ;;
         -u|--username)
-            get-user $item
+            # get-user $item
+            usern="1"
             clipboard="0"
             ;;
         -x|--clipboard)
-            insert-clipboard $item
-            clipboard="0"
+            # insert-clipboard $item
+            clipboard="1"
             ;;
         *) echo "Unknown argument: $1"; exit 1;;
     esac
     shift
 done
+allItems=$(bw list items)
+item=$(get-item)
 if [ $clipboard -gt 0 ];
 then
     insert-clipboard $item
+fi
+
+if [ $usern -gt 0 ];
+then
+    get-user $item
+fi
+
+if [ $pass -gt 0 ];
+then
+    get-password $item
 fi
 
