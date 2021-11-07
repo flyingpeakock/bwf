@@ -1,5 +1,24 @@
 #!/bin/zsh
 
+usage () {
+    cat <<EOF
+Bitwarden using fzf
+
+Usage
+    bwf [options]
+
+OPTIONS
+    -x, --clipboard insert into clipbaord (default)
+    -h, --help      display this help message
+    -p, --password  print password to stdout
+    -u, --username  print username to stdout
+
+CLIPBOARD
+    Uses xclip to paste username into clipboard and
+    password to primary selection.
+EOF
+}
+
 fzf-command () {
     if [[ -v TMUX ]]; then
         fzf-tmux -p 40% -w 30% $* 
@@ -24,7 +43,7 @@ get-password () {
     if [ "$#" -gt 0 ]; then
         bw get password $*
     else
-        bw get password $(get item)
+        bw get password $(get-item)
     fi
 }
 
@@ -34,4 +53,14 @@ insert-clipboard () {
     get-password $item | xclip -selection primary
 }
 
+while [[ "$#" -gt 0 ]]; do
+    case $1 in
+        -h|--help) usage; exit 0;;
+        -p|--password) get-password; exit 0;;
+        -u|--username) get-user; exit 0;;
+        -x|--clipboard) insert-clipboard; exit 0;;
+        *) echo "Unknown argument: $1"; exit 1;;
+    esac
+    shift
+done
 insert-clipboard
