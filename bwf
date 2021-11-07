@@ -100,7 +100,7 @@ while [[ "$#" -gt 0 ]]; do
 done
 allItems=$(bw list items)
 item=$(get-item)
-if [ -z $item]; then
+if [ -z $item ]; then
     exit 1
 fi
 
