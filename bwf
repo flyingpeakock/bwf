@@ -1,0 +1,37 @@
+#!/bin/zsh
+
+fzf-command () {
+    if [[ -v TMUX ]]; then
+        fzf-tmux -p 40% -w 30% $* 
+    else
+        fzf --height=25% --layout=reverse $* 
+    fi
+}
+
+get-item () {
+    bw list items | jq '.[] | .name' --raw-output | fzf-command
+}
+
+get-user () {
+    if [ "$#" -gt 0 ]; then
+        bw get username $*
+    else
+        bw get username $(get-item)
+    fi
+}
+
+get-password () {
+    if [ "$#" -gt 0 ]; then
+        bw get password $*
+    else
+        bw get password $(get item)
+    fi
+}
+
+insert-clipboard () {
+    local item=$(get-item)
+    get-user $item | xclip -selection clipboard -i 
+    get-password $item | xclip -selection primary
+}
+
+insert-clipboard
