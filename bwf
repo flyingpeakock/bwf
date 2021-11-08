@@ -1,5 +1,7 @@
 #!/bin/zsh
 
+set -e
+
 usage () {
     cat <<EOF
 Bitwarden using fzf
@@ -36,86 +38,68 @@ fzf-command () {
     fi
 }
 
-allItems=""
-
-get-item () {
-    if [[ -z $allItems ]]; then
+get-items () {
+    if [ -z $allItems ]; then
         allItems=$(bw list items)
     fi
-    jq -r '.[] | .name' <<< "${allItems}" | fzf-command
+}
+
+get-item () {
+    if [ -z $item ]; then
+        get-items
+        item=$(jq -r '.[] | .name' <<< "${allItems}" | fzf-command)
+    fi
 }
 
 get-user () {
-    if [ "$#" -gt 0 ]; then
+    if [ "$#" -gt 0 ] && [ -z "$1" ]; then
         jq -r 'map(select(.name == "'"$*"'")) | .[] | .login.username' <<< "${allItems}"
     else
-        jq -r 'map(select(.name == "'"$(get-item)"'")) | .[] .login.username' <<< "${allItems}"
+        get-item
+        jq -r 'map(select(.name == "'"$item"'")) | .[] .login.username' <<< "${allItems}"
     fi
 }
 
 get-password () {
-    if [ "$#" -gt 0 ]; then
+    if [ "$#" -gt 0 ] && [ -z "$1" ]; then
         # bw get password $*
         jq -r 'map(select(.name == "'"$*"'")) | .[] | .login.password' <<< "${allItems}"
     else
-        jq -r 'map(select(.name == "'"$(get-item)"'")) | .[] | .login.password' <<< "${allItems}"
+        get-item
+        jq -r 'map(select(.name == "'"$item"'")) | .[] | .login.password' <<< "${allItems}"
     fi
 }
 
 insert-clipboard () {
-    local item
-    if [ "$#" -gt 0 ]; then
-        item=$*
-    else
-        item=$(get-item)
-    fi
+    get-item
     get-user $item | xclip -selection clipboard -i 
     get-password $item | xclip -selection primary
 }
 
 
 clipboard="1"
-pass="0"
-usern="0"
+item=""
 while [[ "$#" -gt 0 ]]; do
     case $1 in
         -h|--help) usage; exit 0;;
         -p|--password) 
-            # get-password $item
-            pass="1"
+            get-password $item
             clipboard="0"
             ;;
         -u|--username)
-            # get-user $item
-            usern="1"
+            get-user $item
             clipboard="0"
             ;;
         -x|--clipboard)
-            # insert-clipboard $item
-            clipboard="1"
+            insert-clipboard $item
+            clipboard="0"
             ;;
         *) echo "Unknown argument: $1"; exit 1;;
     esac
     shift
 done
-allItems=$(bw list items)
-item=$(get-item)
-if [ -z $item ]; then
-    exit 1
-fi
 
 if [ $clipboard -gt 0 ];
 then
     insert-clipboard $item
 fi
-
-if [ $usern -gt 0 ];
-then
-    get-user $item
-fi
-
-if [ $pass -gt 0 ];
-then
-    get-password $item
-fi
-
