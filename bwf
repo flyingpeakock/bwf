@@ -47,26 +47,28 @@ get-items () {
 get-item () {
     if [ -z $item ]; then
         get-items
-        item=$(jq -r '.[] | .name' <<< "${allItems}" | fzf-command)
+        item=$(jq -r '.[] | [.name, .id]' -c <<< "${allItems}" | \
+            rg -o '".*"' | sed 's/","/\t/g' | sed 's/^"\(.*\)"$/\1/' | \
+            fzf-command -n 1 --with-nth 1 | awk '{print $2}')
     fi
 }
 
 get-user () {
     if [ "$#" -gt 0 ] && [ -z "$1" ]; then
-        jq -r 'map(select(.name == "'"$*"'")) | .[] | .login.username' <<< "${allItems}"
+        jq -r 'map(select(.id == "'"$*"'")) | .[] | .login.username' <<< "${allItems}"
     else
         get-item
-        jq -r 'map(select(.name == "'"$item"'")) | .[] .login.username' <<< "${allItems}"
+        jq -r 'map(select(.id == "'"$item"'")) | .[] .login.username' <<< "${allItems}"
     fi
 }
 
 get-password () {
     if [ "$#" -gt 0 ] && [ -z "$1" ]; then
         # bw get password $*
-        jq -r 'map(select(.name == "'"$*"'")) | .[] | .login.password' <<< "${allItems}"
+        jq -r 'map(select(.id == "'"$*"'")) | .[] | .login.password' <<< "${allItems}"
     else
         get-item
-        jq -r 'map(select(.name == "'"$item"'")) | .[] | .login.password' <<< "${allItems}"
+        jq -r 'map(select(.id == "'"$item"'")) | .[] | .login.password' <<< "${allItems}"
     fi
 }
 
@@ -75,7 +77,6 @@ insert-clipboard () {
     get-user $item | xclip -selection clipboard -i 
     get-password $item | xclip -selection primary
 }
-
 
 clipboard="1"
 item=""
