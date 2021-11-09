@@ -51,6 +51,10 @@ get-item () {
             rg -o '".*"' | sed 's/","/\t/g' | sed 's/^"\(.*\)"$/\1/' | \
             fzf-command -n 1 --with-nth 1 | awk '{print $2}')
     fi
+    if [ -z $item ]; then
+        # No matches
+        exit 1
+    fi
 }
 
 get-user () {
