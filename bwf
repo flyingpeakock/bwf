@@ -38,7 +38,7 @@ fzf-command () {
         fzf-tmux -p --preview-window hidden,wrap,60% --bind=ctrl-p:toggle-preview --preview $preview  $*
     else
         # Edit this if you don't use tmux and want to change the appearance
-        fzf --height=25% --layout=reverse --preview-window hidden,wrap,60% -bind=ctrl-p:toggle-preview --preview $preview $*
+        fzf --height=25% --layout=reverse --preview-window hidden,wrap,60% --bind=ctrl-p:toggle-preview --preview $preview $*
     fi
 }
 
