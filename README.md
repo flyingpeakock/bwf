@@ -38,4 +38,6 @@ LOGIN
     BW_SESSION to your session key. To get the session key
     run 'bw login'
 
+KEYBINDS
+    ctrl-p      toggle preview
 ```
