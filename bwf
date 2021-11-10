@@ -29,12 +29,13 @@ EOF
 
 # Edit fzf-command to change appearance
 fzf-command () {
+    local preview='bw get item {-1} | jq -C -r ".| {name: .name, username: .login.username, password: .login.password, notes: .notes, uri: .login.uris[].uri}" | head -n -1 | tail -n +2'
     if [[ -v TMUX ]]; then
         # Edit this if you use tmux and want to change the appearance
-        fzf-tmux -p 40% -w 30% $*
+        fzf-tmux -p --preview-window hidden,wrap --bind=ctrl-p:toggle-preview --preview $preview  $*
     else
         # Edit this if you don't use tmux and want to change the appearance
-        fzf --height=25% --layout=reverse $*
+        fzf --height=25% --layout=reverse --preview-window hidden,wrap -bind=ctrl-p:toggle-preview --preview $preview $*
     fi
 }
 
