@@ -32,7 +32,7 @@ EOF
 
 # Edit fzf-command to change appearance
 fzf_command () {
-    local preview='bw get item {-1} | jq -C -r ".| {name: .name, username: .login.username, password: .login.password, notes: .notes, uri: .login.uris[].uri}" | head -n -1 | tail -n +2'
+    local preview='bw get item {-1} | jq -C -r ".| {name: .name, username: .login.username, password: .login.password, notes: .notes, uri: .login.uris[].uri}" | head -n -1 | tail -n +2 | sed "s/^\s//g"'
     if [ -v "$TMUX" ]; then
         # Edit this if you use tmux and want to change the appearance
         fzf-tmux -p --preview-window hidden,wrap,60% --bind=ctrl-p:toggle-preview --preview "$preview"  "$@"
