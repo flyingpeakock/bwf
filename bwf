@@ -31,80 +31,80 @@ EOF
 }
 
 # Edit fzf-command to change appearance
-fzf-command () {
+fzf_command () {
     local preview='bw get item {-1} | jq -C -r ".| {name: .name, username: .login.username, password: .login.password, notes: .notes, uri: .login.uris[].uri}" | head -n -1 | tail -n +2'
-    if [[ -v TMUX ]]; then
+    if [ -v "$TMUX" ]; then
         # Edit this if you use tmux and want to change the appearance
-        fzf-tmux -p --preview-window hidden,wrap,60% --bind=ctrl-p:toggle-preview --preview $preview  $*
+        fzf-tmux -p --preview-window hidden,wrap,60% --bind=ctrl-p:toggle-preview --preview "$preview"  "$@"
     else
         # Edit this if you don't use tmux and want to change the appearance
-        fzf --height=25% --layout=reverse --preview-window hidden,wrap,60% --bind=ctrl-p:toggle-preview --preview $preview $*
+        fzf --height=25% --layout=reverse --preview-window hidden,wrap,60% --bind=ctrl-p:toggle-preview --preview "$preview" "$@"
     fi
 }
 
-get-items () {
-    if [ -z $allItems ]; then
+get_items () {
+    if [ -z "$allItems" ]; then
         allItems=$(bw list items)
     fi
 }
 
-get-item () {
-    if [ -z $item ]; then
-        get-items
+get_item () {
+    if [ -z "$item" ]; then
+        get_items
         item=$(jq -r '.[] | [.name, .id]' -c <<< "${allItems}" | \
             rg -o '".*"' | sed 's/","/\t/g' | sed 's/^"\(.*\)"$/\1/' | \
-            fzf-command --with-nth ..-2 | awk '{print $2}')
+            fzf_command --with-nth ..-2 | awk '{print $2}')
     fi
-    if [ -z $item ]; then
+    if [ -z "$item" ]; then
         # No matches
         exit 1
     fi
 }
 
-get-user () {
+get_user () {
     if [ "$#" -gt 0 ] && [ -z "$1" ]; then
         jq -r 'map(select(.id == "'"$*"'")) | .[] | .login.username' \
             <<< "${allItems}"
     else
-        get-item
+        get_item
         jq -r 'map(select(.id == "'"$item"'")) | .[] .login.username' \
             <<< "${allItems}"
     fi
 }
 
-get-password () {
+get_password () {
     if [ "$#" -gt 0 ] && [ -z "$1" ]; then
         # bw get password $*
         jq -r 'map(select(.id == "'"$*"'")) | .[] | .login.password' \
             <<< "${allItems}"
     else
-        get-item
+        get_item
         jq -r 'map(select(.id == "'"$item"'")) | .[] | .login.password' \
             <<< "${allItems}"
     fi
 }
 
-insert-clipboard () {
-    get-item
-    get-user $item | xclip -selection clipboard -i 
-    get-password $item | xclip -selection primary
+insert_clipboard () {
+    get_item
+    get_user "$item" | xclip -selection clipboard -i 
+    get_password "$item" | xclip -selection primary
 }
 
 clipboard="1"
 item=""
-while [[ "$#" -gt 0 ]]; do
+while [ "$#" -gt 0 ]; do
     case $1 in
         -h|--help) usage; exit 0;;
         -p|--password) 
-            get-password $item
+            get_password "$item"
             clipboard="0"
             ;;
         -u|--username)
-            get-user $item
+            get_user "$item"
             clipboard="0"
             ;;
         -x|--clipboard)
-            insert-clipboard $item
+            insert_clipboard "$item"
             clipboard="0"
             ;;
         *) echo "Unknown argument: $1"; exit 1;;
@@ -114,5 +114,5 @@ done
 
 if [ $clipboard -gt 0 ];
 then
-    insert-clipboard $item
+    insert_clipboard "$item"
 fi
