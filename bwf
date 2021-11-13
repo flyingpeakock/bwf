@@ -96,15 +96,15 @@ while [ "$#" -gt 0 ]; do
     case $1 in
         -h|--help) usage; exit 0;;
         -p|--password) 
-            get_password "$item"
+            get_password
             clipboard="0"
             ;;
         -u|--username)
-            get_user "$item"
+            get_user
             clipboard="0"
             ;;
         -x|--clipboard)
-            insert_clipboard "$item"
+            insert_clipboard
             clipboard="0"
             ;;
         *) echo "Unknown argument: $1"; exit 1;;
