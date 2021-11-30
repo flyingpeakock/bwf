@@ -57,7 +57,7 @@ get_item () {
     fi
     if [ -z "$item" ]; then
         # No matches
-        exit 1
+        return 1
     fi
 }
 
@@ -94,7 +94,7 @@ clipboard="1"
 item=""
 while [ "$#" -gt 0 ]; do
     case $1 in
-        -h|--help) usage; exit 0;;
+        -h|--help) usage; return 0;;
         -p|--password) 
             get_password
             clipboard="0"
