@@ -5,7 +5,7 @@
 ## Requirments
 - **bw-cli**    
     used for querying bitwarden
-- **xcli**    
+- **xclip**    
     used for inserting into clipboard
 - **jq**    
     used for parsing bw-cli
