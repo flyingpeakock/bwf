@@ -2,18 +2,20 @@
 
 **Script that uses fzf to fetch usernames and passwords from bitwarden.**
 
-## Requirments
-- **bw-cli**    
+## Requirements
+
+- **bw-cli**
     used for querying bitwarden
-- **xclip**    
+- **xclip**
     used for inserting into clipboard
-- **jq**    
+- **jq**
     used for parsing bw-cli
-- **fzf**    
+- **fzf**
     used for getting user input
 
 ## Installation
-Make sure you have installed the requirments then simply clone this repository and move bwf to anywhere on your path.
+
+Make sure you have installed the requirements then simply clone this repository and move bwf to anywhere on your path.
 
 ## Usage
 
