@@ -91,20 +91,19 @@ bwf_getitem () {
 # @description grabs username for given account
 bwf_getuser () {
    if [ "$#" -gt 0 ] && [ -z "$1" ]; then
-      jq -r 'map(select(.id == "'"$*"'")) | .[] | .login.username' \
+      item=$*
          <<< "${allItems}"
    else
       bwf_getitem
-      jq -r 'map(select(.id == "'"$item"'")) | .[] .login.username' \
-         <<< "${allItems}"
    fi
+   jq -r 'map(select(.id == "'"$item"'")) | .[] .login.username' \
+       <<< "${allItems}"
 }
 
 # @description grabs password for given account
 bwf_getpassword () {
    if [ "$#" -gt 0 ] && [ -z "$1" ]; then
       item=$*
-         <<< "${allItems}"
    else
       bwf_getitem
    fi
@@ -160,15 +159,15 @@ bwf_getitem
 if [ $uflag -gt 0 ] || ([ $uflag -eq 0 ] && [ $pflag -eq 0 ] ) ; then
    if [ $xflag -gt 0 ]; then
       bwf_getuser "$item" | xclip -selection clipboard -i | echo "✔ username copied to clipboard"
-      return
+   else
+      bwf_getuser "$item"
    fi
-   bwf_getuser "$item"
 fi
 
 if [ $pflag -gt 0 ]; then
    if [ $xflag -gt 0 ]; then
       bwf_getpassword "$item" | xclip -selection clipboard -i | echo "✔ password copied to clipboard"
-      return
+   else
+      bwf_getpassword "$item"
    fi
-   bwf_getpassword "$item"
 fi
