@@ -2,18 +2,21 @@
 
 set -e
 
-usage () {
+# @description shows usage of command
+bwf_usage () {
     cat <<EOF
 Bitwarden using fzf
 
 Usage
-    bwf [options]
+    bwf [options] [<ACCOUNT_NAME>]
 
 OPTIONS
     -x, --clipboard     insert into clipbaord (default)
     -h, --help          display this help message
     -p, --password      print password to stdout
     -u, --username      print username to stdout
+
+if neither `-p` and `-u` are not defined, `-u` is set
 
 CLIPBOARD
     Uses xclip to paste username into clipboard and
@@ -30,89 +33,142 @@ KEYBINDS
 EOF
 }
 
-# Edit fzf-command to change appearance
+# @description Helper function to check if a given tool is installed, otherwise die
+# @arg $1 string name of the binary
+# @arg $2 string additional text to the error message (e.g. where to download)
+need() {
+   which "$1" &>/dev/null || die "Binary '$1' is missing but required\n$2"
+}
+
+# @description Edit fzf-command to change appearance
 fzf_command () {
-    local preview='bw get item {-1} | jq -C -r ".| {name: .name, username: .login.username, password: .login.password, notes: .notes, uri: .login.uris[].uri}" | head -n -1 | tail -n +2 | sed "s/^\s//g"'
-    if [ -v "$TMUX" ]; then
-        # Edit this if you use tmux and want to change the appearance
-        fzf-tmux -p --preview-window hidden,wrap,60% --bind=ctrl-p:toggle-preview --preview "$preview"  "$@"
-    else
-        # Edit this if you don't use tmux and want to change the appearance
-        fzf --height=25% --layout=reverse --preview-window hidden,wrap,60% --bind=ctrl-p:toggle-preview --preview "$preview" "$@"
-    fi
+   local preview='bw get item {-1} | jq -C -r ".| {name: .name, username: .login.username, password: .login.password, notes: .notes, uri: .login.uris[].uri}" | head -n -1 | tail -n +2 | sed "s/^\s//g"'
+   if [ -v "$TMUX" ]; then
+      # Edit this if you use tmux and want to change the appearance
+      fzf-tmux -p --preview-window hidden,wrap,60% --bind=ctrl-p:toggle-preview --preview "$preview"  "$@"
+   else
+      # Edit this if you don't use tmux and want to change the appearance
+      fzf --height=25% --layout=reverse --preview-window hidden,wrap,60% --bind=ctrl-p:toggle-preview --preview "$preview" "$@"
+   fi
 }
 
-get_items () {
-    if [ -z "$allItems" ]; then
-        allItems=$(bw list items)
-    fi
+# @description gets a single items (json)
+bwf_getsingleitem () {
+   if [ -z "$allItems" ]; then
+      allItems=$(bw get item "$account")
+   fi
 }
 
-get_item () {
-    if [ -z "$item" ]; then
-        get_items
-        item=$(jq -r '.[] | [.name, .id]' -c <<< "${allItems}" | \
-            rg -o '".*"' | sed 's/","/\t/g' | sed 's/^"\(.*\)"$/\1/' | \
-            fzf_command --with-nth ..-2 | awk '{print $2}')
-    fi
-    if [ -z "$item" ]; then
-        # No matches
-        return 1
-    fi
+# @description gets all items (json)
+bwf_getitems () {
+   if [ -z "$allItems" ]; then
+      allItems=$(bw list items)
+   fi
 }
 
-get_user () {
-    if [ "$#" -gt 0 ] && [ -z "$1" ]; then
-        jq -r 'map(select(.id == "'"$*"'")) | .[] | .login.username' \
-            <<< "${allItems}"
-    else
-        get_item
-        jq -r 'map(select(.id == "'"$item"'")) | .[] .login.username' \
-            <<< "${allItems}"
-    fi
+# @description gets the id of the selected item
+# * if `ACCOUNT_NAME` is provided, then return a single item
+# * if `ACCOUNT_NAME` is not provided, then ask user to select from all accounts
+bwf_getitem () {
+   if [ -z "$item" ]; then
+      if [ ! -z "$account" ]; then
+         bwf_getsingleitem
+         item=$(jq -r '.id' -c <<< "${allItems}")
+      else
+         bwf_getitems
+         item=$(jq -r '.[] | [.name, .id]' -c <<< "${allItems}" | \
+               rg -ao '".*"' | sed 's/","/\t/g' | sed 's/^"\(.*\)"$/\1/' | \
+               fzf_command --with-nth ..-2 | awk '{print $2}')
+      fi
+   fi
+
+   if [ -z "$item" ]; then
+      echo "❌ no matches"
+      return 1
+   fi
 }
 
-get_password () {
-    if [ "$#" -gt 0 ] && [ -z "$1" ]; then
-        # bw get password $*
-        jq -r 'map(select(.id == "'"$*"'")) | .[] | .login.password' \
-            <<< "${allItems}"
-    else
-        get_item
-        jq -r 'map(select(.id == "'"$item"'")) | .[] | .login.password' \
-            <<< "${allItems}"
-    fi
+# @description grabs username for given account
+bwf_getuser () {
+   if [ "$#" -gt 0 ] && [ -z "$1" ]; then
+      jq -r 'map(select(.id == "'"$*"'")) | .[] | .login.username' \
+         <<< "${allItems}"
+   else
+      bwf_getitem
+      jq -r 'map(select(.id == "'"$item"'")) | .[] .login.username' \
+         <<< "${allItems}"
+   fi
 }
 
-insert_clipboard () {
-    get_item
-    get_user "$item" | xclip -selection clipboard -i 
-    get_password "$item" | xclip -selection primary
+# @description grabs password for given account
+bwf_getpassword () {
+   if [ "$#" -gt 0 ] && [ -z "$1" ]; then
+      item=$*
+         <<< "${allItems}"
+   else
+      bwf_getitem
+   fi
+   jq -r 'map(select(.id == "'"$item"'")) | .[] | .login.password' \
+         <<< "${allItems}"
 }
 
-clipboard="1"
+xflag=0
+uflag=0
+pflag=0
 item=""
+
+need bw
+need xclip
+need jq
+need fzf
+
+### Read arguments
+parsed_options=$(getopt -n "$0" -o upxh -- "$@")
+eval "set -- $parsed_options"
 while [ "$#" -gt 0 ]; do
     case $1 in
-        -h|--help) usage; return 0;;
-        -p|--password) 
-            get_password
-            clipboard="0"
-            ;;
-        -u|--username)
-            get_user
-            clipboard="0"
-            ;;
-        -x|--clipboard)
-            insert_clipboard
-            clipboard="0"
-            ;;
-        *) echo "Unknown argument: $1"; exit 1;;
+        (-u|--username)
+            uflag=1
+            shift
+        ;;
+        (-p|password)
+            pflag=1
+            shift
+        ;;
+        (-x|--clipboard)
+            xflag=1
+            shift
+        ;;
+        (-h|--help) bwf_usage; return 0;;
+        (--)
+            shift
+            break
+        ;;
+        (*) exit_abnormal;;
     esac
-    shift
 done
 
-if [ $clipboard -gt 0 ];
-then
-    insert_clipboard "$item"
+if [ -z "$*" ]; then
+    account=""
+else
+    account="$*"
+fi
+
+bwf_getitem
+
+# show username per default
+if [ $uflag -gt 0 ] || ([ $uflag -eq 0 ] && [ $pflag -eq 0 ] ) ; then
+   if [ $xflag -gt 0 ]; then
+      bwf_getuser "$item" | xclip -selection clipboard -i | echo "✔ username copied to clipboard"
+      return
+   fi
+   bwf_getuser "$item"
+fi
+
+if [ $pflag -gt 0 ]; then
+   if [ $xflag -gt 0 ]; then
+      bwf_getpassword "$item" | xclip -selection clipboard -i | echo "✔ password copied to clipboard"
+      return
+   fi
+   bwf_getpassword "$item"
 fi
