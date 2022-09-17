@@ -57,10 +57,10 @@ fzf_command ()
    local preview='bw get item {-1} | jq -C -r ".| {name: .name, username: .login.username, password: .login.password, notes: .notes, uri: .login.uris[] }" '
    if [ -v "$TMUX" ]; then
       # Edit this if you use tmux and want to change the appearance
-      fzf-tmux -p --preview-window $preview_options --bind=ctrl-p:toggle-preview --preview "$preview"  "$@"
+      fzf-tmux -p --exit-0 --preview-window $preview_options --bind=ctrl-p:toggle-preview --preview "$preview"  "$@"
    else
       # Edit this if you don't use tmux and want to change the appearance
-      fzf --height=25% --layout=reverse --preview-window $preview_options --bind=ctrl-p:toggle-preview --preview "$preview" "$@"
+      fzf --exit-0 --height=25% --layout=reverse --preview-window $preview_options --bind=ctrl-p:toggle-preview --preview "$preview" "$@"
    fi
 }
 
