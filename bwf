@@ -15,6 +15,7 @@ OPTIONS
     -h, --help          display this help message
     -p, --password      print password to stdout
     -u, --username      print username to stdout
+    -n, --notes         print notes to stdout
 
 if neither `-p` and `-u` are not defined, `-u` is set
 
@@ -26,6 +27,12 @@ LOGIN
     To be logged in make sure to set the environment variable
     BW_SESSION to your session key. To get the session key
     run 'bw login'
+
+PREVIEW
+    By default no preview is shown, but can be toggled using `ctrl-p`. The options default to `hidden,wrap,60%` but can be overridden by
+    variable `BWF_FZF_PREVIEW`.
+
+KEYBINDS
 
 KEYBINDS
     ctrl-p      toggle preview
@@ -45,10 +52,10 @@ fzf_command () {
    local preview='bw get item {-1} | jq -C -r ".| {name: .name, username: .login.username, password: .login.password, notes: .notes, uri: .login.uris[].uri}" | head -n -1 | tail -n +2 | sed "s/^\s//g"'
    if [ -v "$TMUX" ]; then
       # Edit this if you use tmux and want to change the appearance
-      fzf-tmux -p --preview-window hidden,wrap,60% --bind=ctrl-p:toggle-preview --preview "$preview"  "$@"
+      fzf-tmux -p --preview-window $preview_options --bind=ctrl-p:toggle-preview --preview "$preview"  "$@"
    else
       # Edit this if you don't use tmux and want to change the appearance
-      fzf --height=25% --layout=reverse --preview-window hidden,wrap,60% --bind=ctrl-p:toggle-preview --preview "$preview" "$@"
+      fzf --height=25% --layout=reverse --preview-window $preview_options --bind=ctrl-p:toggle-preview --preview "$preview" "$@"
    fi
 }
 
@@ -126,11 +133,16 @@ xflag=0
 uflag=0
 pflag=0
 item=""
+preview_options="hidden,wrap,60%"
 
 need bw
 need xclip
 need jq
 need fzf
+
+if [ ! -z "$BWF_FZF_PREVIEW" ]; then
+   preview_options="$BWF_FZF_PREVIEW"
+fi
 
 ### Read arguments
 parsed_options=$(getopt -n "$0" -o upxnh -l username,help,password,notes,clipboard -- "$@")

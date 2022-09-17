@@ -30,6 +30,7 @@ OPTIONS
     -h, --help              display this help message
     -p, --password          print password to stdout
     -u, --username          print username to stdout
+    -n, --notes         print notes to stdout
 
 CLIPBOARD
     Uses xclip to paste username into clipboard and
@@ -39,6 +40,10 @@ LOGIN
     To be logged in make sure to set the environment variable
     BW_SESSION to your session key. To get the session key
     run 'bw login'
+
+PREVIEW
+    By default no preview is shown, but can be toggled using `ctrl-p`. The options default to `hidden,wrap,60%` but can be overridden by
+    variable `BWF_FZF_PREVIEW`.
 
 KEYBINDS
     ctrl-p      toggle preview
