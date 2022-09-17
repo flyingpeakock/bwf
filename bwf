@@ -11,6 +11,7 @@ Usage
 
 OPTIONS
     -x, --clipboard     insert into clipbaord (default)
+    -s, --stdout        print to standard out. Disables -x
     -h, --help          display this help message
     -p, --password      print password to stdout
     -u, --username      print username to stdout
@@ -157,7 +158,7 @@ bfw_emptyclipboard()
    echo "" | xclip -selection clipboard -i | echo "✔ clipboard emptied"
 }
 
-xflag=0
+xflag=1
 uflag=0
 pflag=0
 nflag=0
@@ -177,7 +178,7 @@ if [ ! -z "$BWF_FZF_PREVIEW" ]; then
 fi
 
 ### Read arguments
-parsed_options=$(getopt -n "$0" -o upxnth -l username,help,password,notes,clipboard,totp -- "$@")
+parsed_options=$(getopt -n "$0" -o upxnths -l username,help,password,notes,clipboard,totp,stdout -- "$@")
 eval "set -- $parsed_options"
 while [ "$#" -gt 0 ]; do
     case $1 in
@@ -199,6 +200,10 @@ while [ "$#" -gt 0 ]; do
         ;;
         (-t|--totp)
             tflag=1
+            shift
+        ;;
+        (-s|--stdout)
+            xflag=0
             shift
         ;;
         (-h|--help) bwf_usage; return 0;;
