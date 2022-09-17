@@ -85,6 +85,8 @@ bwf_getitems ()
 # @description gets the id of the selected item
 # * if `ACCOUNT_NAME` is provided, then return a single item
 # * if `ACCOUNT_NAME` is not provided, then ask user to select from all accounts
+rg_grep="rg"
+which rg &>/dev/null || rg_grep="grep"
 bwf_getitem ()
 {
    if [ -z "$item" ]; then
@@ -94,7 +96,7 @@ bwf_getitem ()
       else
          bwf_getitems
          item=$(jq -r '.[] | [.name, .id]' -c <<< "${allItems}" | \
-               rg -ao '".*"' | sed 's/","/\t/g' | sed 's/^"\(.*\)"$/\1/' | \
+               $rg_grep -ao '".*"' | sed 's/","/\t/g' | sed 's/^"\(.*\)"$/\1/' | \
                fzf_command --with-nth ..-2 | awk '{print $2}')
       fi
    fi
