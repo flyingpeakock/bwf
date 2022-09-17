@@ -16,6 +16,7 @@ OPTIONS
     -p, --password      print password to stdout
     -u, --username      print username to stdout
     -n, --notes         print notes to stdout
+    -t, --totp          print one time password
 
 if neither `-p` and `-u` are not defined, `-u` is set
 
@@ -44,12 +45,14 @@ EOF
 # @arg $1 string name of the binary
 # @arg $2 string additional text to the error message (e.g. where to download)
 need() {
-   which "$1" &>/dev/null || die "Binary '$1' is missing but required\n$2"
+   which "$1" &>/dev/null || echo "Binary '$1' is missing but required\n$2" || exit 1
 }
 
 # @description Edit fzf-command to change appearance
 fzf_command () {
-   local preview='bw get item {-1} | jq -C -r ".| {name: .name, username: .login.username, password: .login.password, notes: .notes, uri: .login.uris[].uri}" | head -n -1 | tail -n +2 | sed "s/^\s//g"'
+   local items=$(bw get item {-1})
+   local type=$(jq -c -e '.type' <<< "$items")
+   local preview='bw get item {-1} | jq -C -r ".| {name: .name, username: .login.username, password: .login.password, notes: .notes, uri: .login.uris[] }" '
    if [ -v "$TMUX" ]; then
       # Edit this if you use tmux and want to change the appearance
       fzf-tmux -p --preview-window $preview_options --bind=ctrl-p:toggle-preview --preview "$preview"  "$@"
@@ -118,6 +121,16 @@ bwf_getpassword () {
          <<< "${allItems}"
 }
 
+# @description grabs totp for given account
+bwf_gettotp () {
+   if [ "$#" -gt 0 ] && [ -z "$1" ]; then
+      item=$*
+   else
+      bwf_getitem
+   fi
+   bw get totp "$item"
+}
+
 # @description grabs notes for given account
 bwf_getnotes () {
    if [ "$#" -gt 0 ] && [ -z "$1" ]; then
@@ -132,6 +145,8 @@ bwf_getnotes () {
 xflag=0
 uflag=0
 pflag=0
+nflag=0
+tflag=0
 item=""
 preview_options="hidden,wrap,60%"
 
@@ -145,7 +160,7 @@ if [ ! -z "$BWF_FZF_PREVIEW" ]; then
 fi
 
 ### Read arguments
-parsed_options=$(getopt -n "$0" -o upxnh -l username,help,password,notes,clipboard -- "$@")
+parsed_options=$(getopt -n "$0" -o upxnth -l username,help,password,notes,clipboard,totp -- "$@")
 eval "set -- $parsed_options"
 while [ "$#" -gt 0 ]; do
     case $1 in
@@ -163,6 +178,10 @@ while [ "$#" -gt 0 ]; do
         ;;
         (-x|--clipboard)
             xflag=1
+            shift
+        ;;
+        (-t|--totp)
+            tflag=1
             shift
         ;;
         (-h|--help) bwf_usage; return 0;;
@@ -183,7 +202,7 @@ fi
 bwf_getitem
 
 # show username per default
-if [ $uflag -gt 0 ] || ([ $uflag -eq 0 ] && [ $pflag -eq 0 ] && [ $nflag -eq 0 ]) ; then
+if [ $uflag -gt 0 ] || ([ $uflag -eq 0 ] && [ $pflag -eq 0 ] && [ $nflag -eq 0 ] && [ $tflag -eq 0 ]) ; then
    if [ $xflag -gt 0 ]; then
       bwf_getuser "$item" | xclip -selection clipboard -i | echo "✔ username copied to clipboard"
    else
@@ -204,5 +223,13 @@ if [ $nflag -gt 0 ]; then
       bwf_getnotes "$item" | xclip -selection clipboard -i | echo "✔ notes copied to clipboard"
    else
       bwf_getnotes "$item"
+   fi
+fi
+
+if [ $tflag -gt 0 ]; then
+   if [ $xflag -gt 0 ]; then
+      bwf_gettotp "$item" | xclip -selection clipboard -i | echo "✔ totp copied to clipboard"
+   else
+      bwf_gettotp "$item"
    fi
 fi
