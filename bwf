@@ -13,12 +13,13 @@ OPTIONS
     -x, --clipboard     insert into clipbaord (default)
     -s, --stdout        print to standard out. Disables -x
     -h, --help          display this help message
-    -p, --password      print password to stdout
-    -u, --username      print username to stdout
-    -n, --notes         print notes to stdout
-    -t, --totp          print one time password
+    -p, --password      select password
+    -u, --username      select username 
+    -n, --notes         select notes
+    -t, --totp          select one time password
 
-if neither \`-p\` and \`-u\` are not defined, \`-u\` is set
+If neither \`-p\` and \`-u\` are not defined, \`-u\` is set
+If both \`-s\` and \`-x\` are set the last one takes precedence
 
 CLIPBOARD
     Uses xclip to paste username into clipboard and
