@@ -23,18 +23,24 @@ Make sure you have installed the requirements then simply clone this repository 
 Bitwarden using fzf
 
 Usage
-    bwf [option]
+    bwf [options] [<ACCOUNT_NAME>]
 
 OPTIONS
-    -x, --clipboard         insert into clipboard (default)
-    -h, --help              display this help message
-    -p, --password          print password to stdout
-    -u, --username          print username to stdout
+    -x, --clipboard     insert into clipbaord (default)
+    -s, --stdout        print to standard out. Disables -x
+    -h, --help          display this help message
+    -p, --password      print password to stdout
+    -u, --username      print username to stdout
     -n, --notes         print notes to stdout
+    -t, --totp          print one time password
+
+if neither `-p` and `-u` are not defined, `-u` is set
 
 CLIPBOARD
     Uses xclip to paste username into clipboard and
-    password to primary selection
+    password to primary selection.
+
+    The clipboard is emptied after 10s
 
 LOGIN
     To be logged in make sure to set the environment variable
@@ -46,5 +52,8 @@ PREVIEW
     variable `BWF_FZF_PREVIEW`.
 
 KEYBINDS
+
+KEYBINDS
     ctrl-p      toggle preview
+
 ```
