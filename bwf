@@ -20,6 +20,7 @@ OPTIONS
 
 If neither \`-p\` and \`-u\` are not defined, \`-u\` is set
 If both \`-s\` and \`-x\` are set the last one takes precedence
+If this program thinks it is running through a pipe -s is set by default
 
 CLIPBOARD
     Uses xclip to paste username into clipboard and
@@ -161,7 +162,6 @@ bfw_emptyclipboard()
    echo "" | xclip -selection clipboard -i | echo "✔ clipboard emptied"
 }
 
-xflag=1
 uflag=0
 pflag=0
 nflag=0
@@ -170,6 +170,11 @@ cflag=0
 item=""
 item_type="1" #1=login, 2=secure note, 3=card, 4=identity
 preview_options="hidden,wrap,60%"
+if [ -t 1 ]; then
+    xflag=1
+else
+    xflag=0
+fi
 
 need bw
 need xclip
