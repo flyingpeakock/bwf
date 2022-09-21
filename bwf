@@ -28,16 +28,9 @@ CLIPBOARD
 
     The clipboard is emptied after 10s
 
-LOGIN
-    To be logged in make sure to set the environment variable
-    BW_SESSION to your session key. To get the session key
-    run 'bw login'
-
 PREVIEW
     By default no preview is shown, but can be toggled using \`ctrl-p\`. The options default to \`hidden,wrap,60%\` but can be overridden by
     variable \`bwf_FZF_PREVIEW\`.
-
-KEYBINDS
 
 KEYBINDS
     ctrl-p      toggle preview
@@ -151,9 +144,22 @@ bfw_emptyclipboard() {
    echo "" | xclip -selection clipboard -i | echo "✔ clipboard emptied"
 }
 
+# @description check is session is unlocked, otherwise do unlock
+bwf_unlock() {
+  if [ -z $BW_SESSION ] || [ "$(bw status | jq -r '.status')" = "locked" ]; then
+    if BW_SESSION=$(bw unlock --raw); then
+      export BW_SESSION="$BW_SESSION"
+    else
+      return 1
+    fi
+  fi
+}
+
 bwf() {
    rg_grep="rg"
    which rg &>/dev/null || rg_grep="grep"
+
+   bwf_unlock
 
    uflag=0
    pflag=0
@@ -259,8 +265,6 @@ bwf() {
       fi
    fi
 }
-
-bwf "$@"
 
 # add some aliases
 alias bwfu=bwf -u
