@@ -15,7 +15,19 @@
 
 ## Installation
 
-Make sure you have installed the requirements then simply clone this repository and move bwf to anywhere on your path.
+Make sure you have installed the requirements then simply clone this repository and source the `bfw`. So assuming you have `bwf` cloned into `$BWF_INSTALL_DIR` you would do
+
+```bash
+source $BWF_INSTALL_DIR/bwf
+```
+
+ZSH-users can use their favorite plugin manager and install it - with [ZI] it would look like this:
+
+```zsh
+zi load flyingpeakock/bwf
+```
+
+[ZI]: https://github.com/z-shell/zi
 
 ## Usage
 
