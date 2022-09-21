@@ -66,8 +66,5 @@ PREVIEW
     variable `BWF_FZF_PREVIEW`.
 
 KEYBINDS
-
-KEYBINDS
     ctrl-p      toggle preview
-
 ```

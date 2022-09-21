@@ -38,8 +38,6 @@ PREVIEW
     variable \`bwf_FZF_PREVIEW\`.
 
 KEYBINDS
-
-KEYBINDS
     ctrl-p      toggle preview
 
 EOF
@@ -151,9 +149,22 @@ bfw_emptyclipboard() {
    echo "" | xclip -selection clipboard -i | echo "✔ clipboard emptied"
 }
 
+# @description check is session is unlocked, otherwise do unlock
+bwf_unlock() {
+  if [ -z $BW_SESSION ] || [ "$(bw status | jq -r '.status')" = "locked" ]; then
+    if BW_SESSION=$(bw unlock --raw); then
+      export BW_SESSION="$BW_SESSION"
+    else
+      return 1
+    fi
+  fi
+}
+
 bwf() {
    rg_grep="rg"
    which rg &>/dev/null || rg_grep="grep"
+
+   bwf_unlock
 
    uflag=0
    pflag=0
