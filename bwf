@@ -2,8 +2,8 @@
 set -e
 
 # @description shows usage of command
-bwf_usage ()
-{    cat <<EOF
+bwf_usage () {
+cat <<EOF
 Bitwarden using fzf
 
 Usage
@@ -35,7 +35,7 @@ LOGIN
 
 PREVIEW
     By default no preview is shown, but can be toggled using \`ctrl-p\`. The options default to \`hidden,wrap,60%\` but can be overridden by
-    variable \`BWF_FZF_PREVIEW\`.
+    variable \`bwf_FZF_PREVIEW\`.
 
 KEYBINDS
 
@@ -48,14 +48,12 @@ EOF
 # @description Helper function to check if a given tool is installed, otherwise die
 # @arg $1 string name of the binary
 # @arg $2 string additional text to the error message (e.g. where to download)
-need()
-{   
+need() {   
    which "$1" &>/dev/null || echo "Binary '$1' is missing but required\n$2" || exit 1
 }
 
 # @description Edit fzf-command to change appearance
-fzf_command ()
-{
+fzf_command () {
    local type=$(jq -c -e '.type' <<< "$items")
    local preview='bw get item {-1} | jq -C -r ".| {name: .name, username: .login.username, password: .login.password, notes: .notes, uri: .login.uris[] }" '
    if [ -v "$TMUX" ]; then
@@ -68,16 +66,14 @@ fzf_command ()
 }
 
 # @description gets a single items (json)
-bwf_getsingleitem ()
-{
+bwf_getsingleitem () {
       if [ -z "$allItems" ]; then
       allItems=$(bw get item "$account")
    fi
 }
 
 # @description gets all items (json)
-bwf_getitems ()
-{
+bwf_getitems () {
       if [ -z "$allItems" ]; then
       allItems=$(bw list items | jq ". | map(select(.type==$item_type))")
    fi
@@ -86,10 +82,8 @@ bwf_getitems ()
 # @description gets the id of the selected item
 # * if `ACCOUNT_NAME` is provided, then return a single item
 # * if `ACCOUNT_NAME` is not provided, then ask user to select from all accounts
-rg_grep="rg"
-which rg &>/dev/null || rg_grep="grep"
-bwf_getitem ()
-{
+
+bwf_getitem () {
    if [ -z "$item" ]; then
       if [ ! -z "$account" ]; then
          bwf_getsingleitem
@@ -109,8 +103,7 @@ bwf_getitem ()
 }
 
 # @description grabs username for given account
-bwf_getuser ()
-{
+bwf_getuser () {
    if [ "$#" -gt 0 ] && [ -z "$1" ]; then
       item=$*
    else
@@ -121,8 +114,7 @@ bwf_getuser ()
 }
 
 # @description grabs password for given account
-bwf_getpassword ()
-{
+bwf_getpassword () {
    if [ "$#" -gt 0 ] && [ -z "$1" ]; then
       item=$*
    else
@@ -133,8 +125,7 @@ bwf_getpassword ()
 }
 
 # @description grabs totp for given account
-bwf_gettotp ()
-{
+bwf_gettotp () {
       if [ "$#" -gt 0 ] && [ -z "$1" ]; then
       item=$*
    else
@@ -144,8 +135,7 @@ bwf_gettotp ()
 }
 
 # @description grabs notes for given account
-bwf_getnotes ()
-{
+bwf_getnotes () {
    if [ "$#" -gt 0 ] && [ -z "$1" ]; then
       item=$*
    else
@@ -156,112 +146,118 @@ bwf_getnotes ()
 }
 
 # @description empties the clipboard after 10s
-bfw_emptyclipboard()
-{
+bfw_emptyclipboard() {
       sleep 10
    echo "" | xclip -selection clipboard -i | echo "✔ clipboard emptied"
 }
 
-uflag=0
-pflag=0
-nflag=0
-tflag=0
-cflag=0
-item=""
-item_type="1" #1=login, 2=secure note, 3=card, 4=identity
-preview_options="hidden,wrap,60%"
-if [ -t 1 ]; then
-    xflag=1
-else
-    xflag=0
-fi
+bwf() {
+   rg_grep="rg"
+   which rg &>/dev/null || rg_grep="grep"
 
-need bw
-need xclip
-need jq
-need fzf
-
-if [ ! -z "$BWF_FZF_PREVIEW" ]; then
-   preview_options="$BWF_FZF_PREVIEW"
-fi
-
-### Read arguments
-parsed_options=$(getopt -n "$0" -o upxnths -l username,help,password,notes,clipboard,totp,stdout -- "$@")
-eval "set -- $parsed_options"
-while [ "$#" -gt 0 ]; do
-    case $1 in
-        (-u|--username)
-            uflag=1
-            shift
-        ;;
-        (-p|--password)
-            pflag=1
-            shift
-        ;;
-        (-n|--notes)
-            nflag=1
-            shift
-        ;;
-        (-x|--clipboard)
-            xflag=1
-            shift
-        ;;
-        (-t|--totp)
-            tflag=1
-            shift
-        ;;
-        (-s|--stdout)
-            xflag=0
-            shift
-        ;;
-        (-h|--help) bwf_usage; return 0;;
-        (--)
-            shift
-            break
-        ;;
-        (*) exit_abnormal;;
-    esac
-done
-
-if [ -z "$*" ]; then
-    account=""
-else
-    account="$*"
-fi
-
-bwf_getitem
-
-# show username per default
-if [ $uflag -gt 0 ] || ([ $uflag -eq 0 ] && [ $pflag -eq 0 ] && [ $nflag -eq 0 ] && [ $tflag -eq 0 ]) ; then
-   if [ $xflag -gt 0 ]; then
-      bwf_getuser "$item" | xclip -selection clipboard -i | echo "✔ username copied to clipboard"
+   uflag=0
+   pflag=0
+   nflag=0
+   tflag=0
+   cflag=0
+   item=""
+   item_type="1" #1=login, 2=secure note, 3=card, 4=identity
+   preview_options="hidden,wrap,60%"
+   if [ -t 1 ]; then
+      xflag=1
    else
-      bwf_getuser "$item"
+      xflag=0
    fi
-fi
 
-if [ $pflag -gt 0 ]; then
-   if [ $xflag -gt 0 ]; then
-      bwf_getpassword "$item" | xclip -selection clipboard -i | echo "✔ password copied to clipboard"
-      bfw_emptyclipboard
-   else
-      bwf_getpassword "$item"
-   fi
-fi
+   need bw
+   need xclip
+   need jq
+   need fzf
 
-if [ $nflag -gt 0 ]; then
-   if [ $xflag -gt 0 ]; then
-      bwf_getnotes "$item" | xclip -selection clipboard -i | echo "✔ notes copied to clipboard"
-   else
-      bwf_getnotes "$item"
+   if [ ! -z "$bwf_FZF_PREVIEW" ]; then
+      preview_options="$bwf_FZF_PREVIEW"
    fi
-fi
 
-if [ $tflag -gt 0 ]; then
-   if [ $xflag -gt 0 ]; then
-      bwf_gettotp "$item" | xclip -selection clipboard -i | echo "✔ onetime password copied to clipboard"
-      bfw_emptyclipboard
+   ### Read arguments
+   parsed_options=$(getopt -n "$0" -o upxnths -l username,help,password,notes,clipboard,totp,stdout -- "$@")
+   eval "set -- $parsed_options"
+   while [ "$#" -gt 0 ]; do
+      case $1 in
+         (-u|--username)
+               uflag=1
+               shift
+         ;;
+         (-p|--password)
+               pflag=1
+               shift
+         ;;
+         (-n|--notes)
+               nflag=1
+               shift
+         ;;
+         (-x|--clipboard)
+               xflag=1
+               shift
+         ;;
+         (-t|--totp)
+               tflag=1
+               shift
+         ;;
+         (-s|--stdout)
+               xflag=0
+               shift
+         ;;
+         (-h|--help) bwf_usage; return 0;;
+         (--)
+               shift
+               break
+         ;;
+         (*) exit_abnormal;;
+      esac
+   done
+
+   if [ -z "$*" ]; then
+      account=""
    else
-      bwf_gettotp "$item"
+      account="$*"
    fi
-fi
+
+   bwf_getitem
+
+   # show username per default
+   if [ $uflag -gt 0 ] || ([ $uflag -eq 0 ] && [ $pflag -eq 0 ] && [ $nflag -eq 0 ] && [ $tflag -eq 0 ]) ; then
+      if [ $xflag -gt 0 ]; then
+         bwf_getuser "$item" | xclip -selection clipboard -i | echo "✔ username copied to clipboard"
+      else
+         bwf_getuser "$item"
+      fi
+   fi
+
+   if [ $pflag -gt 0 ]; then
+      if [ $xflag -gt 0 ]; then
+         bwf_getpassword "$item" | xclip -selection clipboard -i | echo "✔ password copied to clipboard"
+         bfw_emptyclipboard
+      else
+         bwf_getpassword "$item"
+      fi
+   fi
+
+   if [ $nflag -gt 0 ]; then
+      if [ $xflag -gt 0 ]; then
+         bwf_getnotes "$item" | xclip -selection clipboard -i | echo "✔ notes copied to clipboard"
+      else
+         bwf_getnotes "$item"
+      fi
+   fi
+
+   if [ $tflag -gt 0 ]; then
+      if [ $xflag -gt 0 ]; then
+         bwf_gettotp "$item" | xclip -selection clipboard -i | echo "✔ onetime password copied to clipboard"
+         bfw_emptyclipboard
+      else
+         bwf_gettotp "$item"
+      fi
+   fi
+}
+
+bwf "$@"
