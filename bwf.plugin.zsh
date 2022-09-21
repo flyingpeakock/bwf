@@ -1,5 +1,5 @@
 # Do nothing if bw is not installed
-(( ${+commands[bw]} )) || echo "bitwarden plugin: bitwarden cli is not installed" && return
+(( ${+commands[bw]} )) || return
 
 # Load bw completion
 # eval "$(bw completion --shell zsh)"

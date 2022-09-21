@@ -31,40 +31,30 @@ zi load flyingpeakock/bwf
 
 ## Usage
 
+```bash
+bwf [options] [<ACCOUNT_NAME>]
 ```
-Bitwarden using fzf
 
-Usage
-    bwf [options] [<ACCOUNT_NAME>]
+**OPTIONS**
 
-OPTIONS
-    -x, --clipboard     insert into clipbaord (default)
-    -s, --stdout        print to standard out. Disables -x
-    -h, --help          display this help message
-    -p, --password      select password
-    -u, --username      select username
-    -n, --notes         select notes
-    -t, --totp          select one time password
+  * `-x`, `--clipboard`     insert into clipbaord (default)
+  * -`s`, `--stdout`        print to standard out. Disables -x
+  * -`h`, `--help`          display this help message
+  * -`p`, `--password`      select password
+  * -`u`, `--username`      select username
+  * -`n`, `--notes`         select notes
+  * -`t`, `--totp`          select one time password
 
 If neither `-p` and `-u` are not defined, `-u` is set
 If both `-s` and `-x` are set the last one takes precedence
 If this program thinks it is running through a pipe -s is set by default
 
-CLIPBOARD
-    Uses xclip to paste username into clipboard and
-    password to primary selection.
+## Clipboard
 
-    The clipboard is emptied after 10s
+Uses `xclip` to paste username into clipboard and password to primary selection.
 
-LOGIN
-    To be logged in make sure to set the environment variable
-    BW_SESSION to your session key. To get the session key
-    run 'bw login'
+The clipboard is emptied after 10s when working with passwords or one-time-passwords
 
-PREVIEW
-    By default no preview is shown, but can be toggled using `ctrl-p`. The options default to `hidden,wrap,60%` but can be overridden by
-    variable `BWF_FZF_PREVIEW`.
+## Previw
 
-KEYBINDS
-    ctrl-p      toggle preview
-```
+By default no preview is shown, but can be toggled using `ctrl-p`. The options default to `hidden,wrap,60%` but can be overridden by variable `BWF_FZF_PREVIEW`.

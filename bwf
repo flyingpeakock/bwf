@@ -28,11 +28,6 @@ CLIPBOARD
 
     The clipboard is emptied after 10s
 
-LOGIN
-    To be logged in make sure to set the environment variable
-    BW_SESSION to your session key. To get the session key
-    run 'bw login'
-
 PREVIEW
     By default no preview is shown, but can be toggled using \`ctrl-p\`. The options default to \`hidden,wrap,60%\` but can be overridden by
     variable \`bwf_FZF_PREVIEW\`.
@@ -270,8 +265,6 @@ bwf() {
       fi
    fi
 }
-
-bwf "$@"
 
 # add some aliases
 alias bwfu=bwf -u
