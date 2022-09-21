@@ -1,5 +1,4 @@
 #!/bin/zsh
-set -e
 
 # @description shows usage of command
 bwf_usage () {
@@ -267,11 +266,11 @@ bwf() {
 }
 
 # add some aliases
-alias bwfu=bwf -u
-alias bwfus=bwf -u -s
-alias bwfp=bwf -p
-alias bwfps=bwf -p -s
-alias bwft=bwf -t
-alias bwfts=bwf -t -s
-alias bwfn=bwf -n
-alias bwfns=bwf -n -s
+alias bwfu="bwf -u"
+alias bwfus="bwf -u -s"
+alias bwfp="bwf -p"
+alias bwfps="bwf -p -s"
+alias bwft="bwf -t"
+alias bwfts="bwf -t -s"
+alias bwfn="bwf -n"
+alias bwfns="bwf -n -s"
