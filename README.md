@@ -55,6 +55,12 @@ Uses `xclip` to paste username into clipboard and password to primary selection.
 
 The clipboard is emptied after 10s when working with passwords or one-time-passwords
 
-## Previw
+## Preview
 
 By default no preview is shown, but can be toggled using `ctrl-p`. The options default to `hidden,wrap,60%` but can be overridden by variable `BWF_FZF_PREVIEW`.
+
+## Info
+
+For wayland sessions it uses [`wl-copy`](https://man.archlinux.org/man/wl-copy.1)
+
+> wl-copy --clear and wl-copy --paste-once don't always interact well with clipboard managers that are overeager to preserve clipboard contents.
