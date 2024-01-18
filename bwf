@@ -142,9 +142,10 @@ bfw_emptyclipboard() {
    sleep 10
    if [ "$XDG_SESSION_TYPE" = "x1" ]; then
       echo "" | xclip -selection clipboard -i | echo "✔ clipboard emptied"
-   else
-      echo "" | wl-copy -o -c | echo "✔ clipboard emptied"
    fi
+
+   ## workaround for gpaste users
+   which gpaste-client &>/dev/null && gpaste-client delete 0 --use-index
 }
 
 # @description check is session is unlocked, otherwise do unlock
