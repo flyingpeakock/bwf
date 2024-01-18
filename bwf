@@ -59,14 +59,14 @@ fzf_command () {
 
 # @description gets a single items (json)
 bwf_getsingleitem () {
-      if [ -z "$allItems" ]; then
+   if [ -z "$allItems" ]; then
       allItems=$(bw get item "$account")
    fi
 }
 
 # @description gets all items (json)
 bwf_getitems () {
-      if [ -z "$allItems" ]; then
+   if [ -z "$allItems" ]; then
       allItems=$(bw list items | jq ". | map(select(.type==$item_type))")
    fi
 }
@@ -139,8 +139,12 @@ bwf_getnotes () {
 
 # @description empties the clipboard after 10s
 bfw_emptyclipboard() {
-      sleep 10
-   echo "" | xclip -selection clipboard -i | echo "✔ clipboard emptied"
+   sleep 10
+   if [ "$XDG_SESSION_TYPE" != "wayland" ]; then
+      echo "" | xclip -selection clipboard -i | echo "✔ clipboard emptied"
+   else
+      echo "" | wl-copy -o -c | echo "✔ clipboard emptied"
+   fi
 }
 
 # @description check is session is unlocked, otherwise do unlock
@@ -175,7 +179,11 @@ bwf() {
    fi
 
    need bw
-   need xclip
+   if [ "$XDG_SESSION_TYPE" != "wayland" ]; then
+      need xclip
+   else
+      need wl-copy
+   fi
    need jq
    need fzf
 
@@ -232,7 +240,13 @@ bwf() {
    # show username per default
    if [ $uflag -gt 0 ] || ([ $uflag -eq 0 ] && [ $pflag -eq 0 ] && [ $nflag -eq 0 ] && [ $tflag -eq 0 ]) ; then
       if [ $xflag -gt 0 ]; then
-         bwf_getuser "$item" | xclip -selection clipboard -i | echo "✔ username copied to clipboard"
+         if [ "$XDG_SESSION_TYPE" != "wayland" ]; then
+            bwf_getuser "$item" | xclip -selection clipboard -i | echo "✔ username copied to clipboard"
+            bfw_emptyclipboard
+         else
+            bwf_getuser "$item" | wl-copy -o | echo "✔ username copied to clipboard"
+            bfw_emptyclipboard
+         fi
       else
          bwf_getuser "$item"
       fi
@@ -240,8 +254,13 @@ bwf() {
 
    if [ $pflag -gt 0 ]; then
       if [ $xflag -gt 0 ]; then
-         bwf_getpassword "$item" | xclip -selection clipboard -i | echo "✔ password copied to clipboard"
-         bfw_emptyclipboard
+         if [ "$XDG_SESSION_TYPE" != "wayland" ]; then
+            bwf_getpassword "$item" | xclip -selection clipboard -i | echo "✔ password copied to clipboard"
+            bfw_emptyclipboard
+         else
+            bwf_getpassword "$item" | wl-copy -o | echo "✔ password copied to clipboard"
+            bfw_emptyclipboard
+         fi
       else
          bwf_getpassword "$item"
       fi
@@ -249,7 +268,11 @@ bwf() {
 
    if [ $nflag -gt 0 ]; then
       if [ $xflag -gt 0 ]; then
-         bwf_getnotes "$item" | xclip -selection clipboard -i | echo "✔ notes copied to clipboard"
+         if [ "$XDG_SESSION_TYPE" != "wayland" ]; then
+            bwf_getnotes "$item" | xclip -selection clipboard -i | echo "✔ notes copied to clipboard"
+         else
+            bwf_getnotes "$item" | wl-copy -o | echo "✔ notes copied to clipboard"
+         fi
       else
          bwf_getnotes "$item"
       fi
@@ -257,8 +280,13 @@ bwf() {
 
    if [ $tflag -gt 0 ]; then
       if [ $xflag -gt 0 ]; then
-         bwf_gettotp "$item" | xclip -selection clipboard -i | echo "✔ onetime password copied to clipboard"
-         bfw_emptyclipboard
+         if [ "$XDG_SESSION_TYPE" != "wayland" ]; then
+            bwf_gettotp "$item" | xclip -selection clipboard -i | echo "✔ onetime password copied to clipboard"
+            bfw_emptyclipboard
+         else
+            bwf_gettotp "$item" | wl-copy -o | echo "✔ onetime password copied to clipboard"
+            bfw_emptyclipboard
+         fi
       else
          bwf_gettotp "$item"
       fi
