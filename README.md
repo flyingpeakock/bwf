@@ -8,6 +8,8 @@
     used for querying bitwarden
 - **xclip**
     used for inserting into clipboard
+- **wl-copy**
+    used for inserting into clipboard on Wayland sessions
 - **jq**
     used for parsing bw-cli
 - **fzf**
@@ -38,12 +40,12 @@ bwf [options] [<ACCOUNT_NAME>]
 **OPTIONS**
 
   * `-x`, `--clipboard`     insert into clipbaord (default)
-  * -`s`, `--stdout`        print to standard out. Disables -x
-  * -`h`, `--help`          display this help message
-  * -`p`, `--password`      select password
-  * -`u`, `--username`      select username
-  * -`n`, `--notes`         select notes
-  * -`t`, `--totp`          select one time password
+  * `-s`, `--stdout`        print to standard out. Disables -x
+  * `-h`, `--help`          display this help message
+  * `-p`, `--password`      select password
+  * `-u`, `--username`      select username
+  * `-n`, `--notes`         select notes
+  * `-t`, `--totp`          select one time password
 
 If neither `-p` and `-u` are not defined, `-u` is set
 If both `-s` and `-x` are set the last one takes precedence
@@ -53,14 +55,12 @@ If this program thinks it is running through a pipe -s is set by default
 
 Uses `xclip` to paste username into clipboard and password to primary selection.
 
+For wayland sessions it uses [`wl-copy`](https://man.archlinux.org/man/wl-copy.1)
+
+> wl-copy --clear and wl-copy --paste-once don't always interact well with clipboard managers that are overeager to preserve clipboard contents.
+
 The clipboard is emptied after 10s when working with passwords or one-time-passwords
 
 ## Preview
 
 By default no preview is shown, but can be toggled using `ctrl-p`. The options default to `hidden,wrap,60%` but can be overridden by variable `BWF_FZF_PREVIEW`.
-
-## Info
-
-For wayland sessions it uses [`wl-copy`](https://man.archlinux.org/man/wl-copy.1)
-
-> wl-copy --clear and wl-copy --paste-once don't always interact well with clipboard managers that are overeager to preserve clipboard contents.
