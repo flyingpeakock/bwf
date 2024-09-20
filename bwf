@@ -138,9 +138,14 @@ bwf_getnotes () {
 }
 
 # @description empties the clipboard after 10s
-bfw_emptyclipboard() {
+bwf_emptyclipboard_xclip() {
     sleep 10
     echo "" | xclip -selection clipboard -i | echo "✔ clipboard emptied"
+}
+bwf_emptyclipboard_wl() {
+    sleep 10
+    wl-copy --clear
+    echo "✔ clipboard emptied"
 }
 
 # @description check is session is unlocked, otherwise do unlock
@@ -152,6 +157,14 @@ bwf_unlock() {
         return 1
         fi
     fi
+}
+
+# @description copy to clipboard
+bwf_copy_xclip() {
+    xclip --selection clipboard -i
+}
+bwf_copy_wl() {
+    wl-copy -t "text/plain"
 }
 
 bwf() {
@@ -168,6 +181,8 @@ bwf() {
     item=""
     item_type="1" #1=login, 2=secure note, 3=card, 4=identity
     preview_options="hidden,wrap,60%"
+
+    # set xflag if not through a pipe
     if [ -t 1 ]; then
         xflag=1
     else
@@ -229,22 +244,24 @@ bwf() {
         esac
     done
 
-    copy_type=0
-    if [[ "$sflag" -eq 0 ]]; then
-    fi
-    if ! need xclip; thn
-        if ! need wl-copy; then
-            if [[ $sflag -eq 0 ]]; then
-                    echo "either xclip or wl-clipboard is required but neither is installed"
-                    return 1
-                fi
-        else
-            # wayland
-            copy_type=2
+    if [[ "$xflag" -eq 1 ]]; then # copy to clipboard
+        if [[ $XDG_SESSION_TYPE == "wayland" ]]; then
+            if ! need wl-copy; then
+                echo "wl-clipboard is required but not installed"
+                return 1
+            else
+                bwf_emptyclipboard=bwf_emptyclipboard_wl
+                copy_command=bwf_copy_wl
+            fi
+        elif [[ $XDG_SESSION_TYPE == "x11" ]]; then
+            if ! need xclip; then
+                echo "xclip is required but not installed"
+                return 1
+            else
+                bwf_emptyclipboard=bwf_copy_xclip
+                copy_command="xclip -selection clipboard -i"
+            fi
         fi
-    else
-        # xorg
-        copy_type=1
     fi
 
     if [ -z "$*" ]; then
@@ -258,7 +275,7 @@ bwf() {
     # show username per default
     if [ $uflag -gt 0 ] || ([ $uflag -eq 0 ] && [ $pflag -eq 0 ] && [ $nflag -eq 0 ] && [ $tflag -eq 0 ]) ; then
         if [ $xflag -gt 0 ]; then
-            bwf_getuser "$item" | xclip -selection clipboard -i | echo "✔ username copied to clipboard"
+            bwf_getuser "$item" | $copy_command | echo "✔ username copied to clipboard"
         else
             bwf_getuser "$item"
         fi
@@ -266,8 +283,8 @@ bwf() {
 
     if [ $pflag -gt 0 ]; then
         if [ $xflag -gt 0 ]; then
-            bwf_getpassword "$item" | xclip -selection clipboard -i | echo "✔ password copied to clipboard"
-            bfw_emptyclipboard
+            bwf_getpassword "$item" | $copy_command | echo "✔ password copied to clipboard"
+            $bwf_emptyclipboard
         else
             bwf_getpassword "$item"
         fi
@@ -275,7 +292,7 @@ bwf() {
 
     if [ $nflag -gt 0 ]; then
         if [ $xflag -gt 0 ]; then
-            bwf_getnotes "$item" | xclip -selection clipboard -i | echo "✔ notes copied to clipboard"
+            bwf_getnotes "$item" | $copy_command | echo "✔ notes copied to clipboard"
         else
             bwf_getnotes "$item"
         fi
@@ -283,8 +300,8 @@ bwf() {
 
     if [ $tflag -gt 0 ]; then
         if [ $xflag -gt 0 ]; then
-            bwf_gettotp "$item" | xclip -selection clipboard -i | echo "✔ onetime password copied to clipboard"
-            bfw_emptyclipboard
+            bwf_gettotp "$item" | $copy_command | echo "✔ onetime password copied to clipboard"
+            $bwf_emptyclipboard
         else
             bwf_gettotp "$item"
         fi
@@ -302,4 +319,4 @@ alias bwfn="bwf -n"
 alias bwfns="bwf -n -s"
 
 # If not sourced run bwf function
-[[ $ZSH_EVAL_CONTEXT =~ :file$ ]] || bwf
+[[ $ZSH_EVAL_CONTEXT =~ :file$ ]] || bwf "$@"
