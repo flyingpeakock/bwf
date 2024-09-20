@@ -1,7 +1,7 @@
 #!/bin/zsh
 
 # @description shows usage of command
-bwf_usage () {
+_bwf_usage () {
 cat <<EOF
 Bitwarden using fzf
 
@@ -38,13 +38,13 @@ EOF
 
 # @description Helper function to check if a given tool is installed, otherwise die
 # @arg $1 string name of the binary
-need() {
+_bwf_need() {
     which "$1" &>/dev/null || return 1
     return 0
 }
 
 # @description Edit fzf-command to change appearance
-fzf_command () {
+_bwf_fzf_command () {
     local type=$(jq -c -e '.type' <<< "$items")
     local preview='bw get item {-1} | jq -C -r ".| {name: .name, username: .login.username, password: .login.password, notes: .notes, uri: .login.uris[] }" '
     if [ -v "$TMUX" ]; then
@@ -56,34 +56,24 @@ fzf_command () {
     fi
 }
 
-# @description gets a single items (json)
-bwf_getsingleitem () {
-    if [ -z "$allItems" ]; then
-        allItems=$(bw get item "$account")
-    fi
-}
-
-# @description gets all items (json)
-bwf_getitems () {
-    if [ -z "$allItems" ]; then
-        allItems=$(bw list items | jq ". | map(select(.type==$item_type))")
-    fi
-}
-
 # @description gets the id of the selected item
 # * if `ACCOUNT_NAME` is provided, then return a single item
 # * if `ACCOUNT_NAME` is not provided, then ask user to select from all accounts
 
-bwf_getitem () {
+_bwf_getitem () {
     if [ -z "$item" ]; then
         if [ ! -z "$account" ]; then
-            bwf_getsingleitem
+            if [ -z "$allItems" ]; then
+                allItems=$(bw get item "$account")
+            fi
             item=$(jq -r '.id' -c <<< "${allItems}")
         else
-           bwf_getitems
+           if [ -z "$allItems" ]; then
+               allItems=$(bw list items | jq ". | map(select(.type==$item_type))")
+           fi
            item=$(jq -r '.[] | [.name, .id]' -c <<< "${allItems}" | \
-                $rg_grep -ao '".*"' | sed 's/","/\t/g' | sed 's/^"\(.*\)"$/\1/' | \
-                fzf_command --with-nth ..-2 | awk '{print $2}')
+                grep -ao '".*"' | sed 's/","/\t/g' | sed 's/^"\(.*\)"$/\1/' | \
+                _bwf_fzf_command --with-nth ..-2 | awk '{print $2}')
         fi
     fi
 
@@ -94,61 +84,61 @@ bwf_getitem () {
 }
 
 # @description grabs username for given account
-bwf_getuser () {
+_bwf_getuser () {
     if [ "$#" -gt 0 ] && [ -z "$1" ]; then
         item=$*
     else
-        bwf_getitem || return 1
+        _bwf_getitem || return 1
     fi
     jq -r 'map(select(.id == "'"$item"'")) | .[] .login.username' \
         <<< "${allItems}"
 }
 
 # @description grabs password for given account
-bwf_getpassword () {
+_bwf_getpassword () {
     if [ "$#" -gt 0 ] && [ -z "$1" ]; then
         item=$*
     else
-        bwf_getitem || return 1
+        _bwf_getitem || return 1
     fi
     jq -r 'map(select(.id == "'"$item"'")) | .[] | .login.password' \
             <<< "${allItems}"
 }
 
 # @description grabs totp for given account
-bwf_gettotp () {
+_bwf_gettotp () {
     if [ "$#" -gt 0 ] && [ -z "$1" ]; then
       item=$*
     else
-      bwf_getitem || return 1
+      _bwf_getitem || return 1
     fi
     bw get totp "$item"
 }
 
 # @description grabs notes for given account
-bwf_getnotes () {
+_bwf_getnotes () {
    if [ "$#" -gt 0 ] && [ -z "$1" ]; then
       item=$*
    else
-      bwf_getitem || return 1
+      _bwf_getitem || return 1
    fi
    jq -r 'map(select(.id == "'"$item"'")) | .[] | .notes' \
          <<< "${allItems}"
 }
 
 # @description empties the clipboard after 10s
-bwf_emptyclipboard_xclip() {
+_bwf_emptyclipboard_xclip() {
     sleep 10
     echo "" | xclip -selection clipboard -i | echo "✔ clipboard emptied"
 }
-bwf_emptyclipboard_wl() {
+_bwf_emptyclipboard_wl() {
     sleep 10
     wl-copy --clear
     echo "✔ clipboard emptied"
 }
 
 # @description check is session is unlocked, otherwise do unlock
-bwf_unlock() {
+_bwf_unlock() {
     if [ -z $BW_SESSION ] || [ "$(bw status | jq -r '.status')" = "locked" ]; then
         if BW_SESSION=$(bw unlock --raw); then
         export BW_SESSION="$BW_SESSION"
@@ -159,31 +149,28 @@ bwf_unlock() {
 }
 
 # @description copy to clipboard
-bwf_copy_xclip() {
+_bwf_copy_xclip() {
     xclip --selection clipboard -i
 }
-bwf_copy_p_xclip() {
+_bwf_copy_p_xclip() {
     xclip --selection primary -i
 }
-bwf_copy_wl() {
+_bwf_copy_wl() {
     wl-copy -t "text/plain"
 }
-bwf_copy_p_wl() {
+_bwf_copy_p_wl() {
     wl-copy -t "text/plain" -p
 }
 
 bwf() {
-    rg_grep="rg"
-    which rg &>/dev/null || rg_grep="grep"
+    _bwf_unlock
 
-    bwf_unlock
-
-    uflag=0
-    pflag=0
-    bflag=0
-    nflag=0
-    tflag=0
-    cflag=0
+    local uflag=0
+    local pflag=0
+    local bflag=0
+    local nflag=0
+    local tflag=0
+    local cflag=0
     item=""
     item_type="1" #1=login, 2=secure note, 3=card, 4=identity
     preview_options="hidden,wrap,60%"
@@ -195,15 +182,15 @@ bwf() {
         xflag=0
     fi
 
-    if ! need bw; then
+    if ! _bwf_need bw; then
         echo "bw is required but not installed"
         return 1
     fi
-    if ! need jq; then
+    if ! _bwf_need jq; then
         echo "jq is required but not installed"
         return 1
     fi
-    if ! need fzf; then
+    if ! _bwf_need fzf; then
         echo "fzf is required but not installed"
         return 1
     fi
@@ -245,33 +232,33 @@ bwf() {
                 xflag=0
                 shift
             ;;
-            (-h|--help) bwf_usage; return 0;;
+            (-h|--help) _bwf_usage; return 0;;
             (--)
                 shift
                 break
             ;;
-            (*) bwf_usage; return 1;;
+            (*) exit_abnormal; return 1;;
         esac
     done
 
     if [[ "$xflag" -eq 1 ]]; then # copy to clipboard
         if [[ $XDG_SESSION_TYPE == "wayland" ]]; then
-            if ! need wl-copy; then
+            if ! _bwf_need wl-copy; then
                 echo "wl-clipboard is required but not installed"
                 return 1
             else
-                bwf_emptyclipboard=bwf_emptyclipboard_wl
-                copy_command=bwf_copy_wl
-                copy_p_command=bwf_copy_p_wl
+                local bwf_emptyclipboard=_bwf_emptyclipboard_wl
+                local copy_command=_bwf_copy_wl
+                local copy_p_command=_bwf_copy_p_wl
             fi
         elif [[ $XDG_SESSION_TYPE == "x11" ]]; then
-            if ! need xclip; then
+            if ! _bwf_need xclip; then
                 echo "xclip is required but not installed"
                 return 1
             else
-                bwf_emptyclipboard=bwf_copy_xclip
-                copy_command=bwf_copy_xclip
-                copy_p_command=bwf_copy_p_xclip
+                local bwf_emptyclipboard=_bwf_copy_xclip
+                local copy_command=_bwf_copy_xclip
+                local copy_p_command=_bwf_copy_p_xclip
             fi
         fi
     fi
@@ -282,64 +269,74 @@ bwf() {
         account="$*"
     fi
 
-    bwf_getitem || return 1
+    _bwf_getitem || return 1
 
     # show both per default
     if [ $bflag -gt 0 ] || ([ $bflag -eq 0 ] && [ $uflag -eq 0 ] && [ $pflag -eq 0 ] && [ $nflag -eq 0 ] && [ $tflag -eq 0 ]) ; then
         if [ $xflag -gt 0 ]; then
-            bwf_getuser "$item" | $copy_p_command | echo "✔ username copied to primary clipboard"
-            bwf_getpassword "$item" | $copy_command | echo "✔ password copied to clipboard"
+            _bwf_getuser "$item" | $copy_p_command | echo "✔ username copied to primary clipboard"
+            _bwf_getpassword "$item" | $copy_command | echo "✔ password copied to clipboard"
             $bwf_emptyclipboard&
         else
-            bwf_getuser "$item"
-            bwf_getpassword "$item"
+            _bwf_getuser "$item"
+            _bwf_getpassword "$item"
         fi
     fi
 
     if [ $uflag -gt 0 ]; then
         if [ $xflag -gt 0 ]; then
-            bwf_getuser "$item" | $copy_command | echo "✔ username copied to clipboard"
+            _bwf_getuser "$item" | $copy_command | echo "✔ username copied to clipboard"
         else
-            bwf_getuser "$item"
+            _bwf_getuser "$item"
         fi
     fi
 
     if [ $pflag -gt 0 ]; then
         if [ $xflag -gt 0 ]; then
-            bwf_getpassword "$item" | $copy_command | echo "✔ password copied to clipboard"
+            _bwf_getpassword "$item" | $copy_command | echo "✔ password copied to clipboard"
             $bwf_emptyclipboard&
         else
-            bwf_getpassword "$item"
+            _bwf_getpassword "$item"
         fi
     fi
 
     if [ $nflag -gt 0 ]; then
         if [ $xflag -gt 0 ]; then
-            bwf_getnotes "$item" | $copy_command | echo "✔ notes copied to clipboard"
+            _bwf_getnotes "$item" | $copy_command | echo "✔ notes copied to clipboard"
         else
-            bwf_getnotes "$item"
+            _bwf_getnotes "$item"
         fi
     fi
 
     if [ $tflag -gt 0 ]; then
         if [ $xflag -gt 0 ]; then
-            bwf_gettotp "$item" | $copy_command | echo "✔ onetime password copied to clipboard"
+            _bwf_gettotp "$item" | $copy_command | echo "✔ onetime password copied to clipboard"
             $bwf_emptyclipboard&
         else
-            bwf_gettotp "$item"
+            _bwf_gettotp "$item"
         fi
     fi
+
+    unset item
+    unset item_type
+    unset preview_options
+    unset account
+    unset allItems
 }
 
-# add some aliases
-alias bwfu="bwf -u"
-alias bwfus="bwf -u -s"
-alias bwfp="bwf -p"
-alias bwfps="bwf -p -s"
-alias bwft="bwf -t"
-alias bwfts="bwf -t -s"
-alias bwfn="bwf -n"
-alias bwfns="bwf -n -s"
 
 # If not sourced run bwf function
-[[ $ZSH_EVAL_CONTEXT =~ :file$ ]] || bwf "$@"
+if [[ $ZSH_EVAL_CONTEXT =~ :file$ ]]; then
+    # add some aliases
+    alias bwfu="bwf -u"
+    alias bwfus="bwf -u -s"
+    alias bwfp="bwf -p"
+    alias bwfps="bwf -p -s"
+    alias bwft="bwf -t"
+    alias bwfts="bwf -t -s"
+    alias bwfn="bwf -n"
+    alias bwfns="bwf -n -s"
+else
+    bwf "$@"
+fi
+
