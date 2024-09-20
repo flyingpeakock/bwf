@@ -164,8 +164,6 @@ _bwf_copy_p_wl() {
 }
 
 bwf() {
-    _bwf_unlock
-
     local uflag=0
     local pflag=0
     local bflag=0
@@ -263,6 +261,8 @@ bwf() {
             fi
         fi
     fi
+
+    _bwf_unlock
 
     if [ -z "$*" ]; then
         account=""
