@@ -6,7 +6,7 @@
 
 - **bw-cli**
     used for querying bitwarden
-- **xclip**
+- **xclip** *or* **wl-clipboard**
     used for inserting into clipboard
 - **jq**
     used for parsing bw-cli
@@ -42,16 +42,17 @@ bwf [options] [<ACCOUNT_NAME>]
   * -`h`, `--help`          display this help message
   * -`p`, `--password`      select password
   * -`u`, `--username`      select username
+  * -`b`, `--both`          select username and password
   * -`n`, `--notes`         select notes
   * -`t`, `--totp`          select one time password
 
-If neither `-p` and `-u` are not defined, `-u` is set
+If either `-p`, `-b` and `-u` are not defined, `-b` is set
 If both `-s` and `-x` are set the last one takes precedence
 If this program thinks it is running through a pipe -s is set by default
 
 ## Clipboard
 
-Uses `xclip` to paste username into clipboard and password to primary selection.
+Uses `xclip`/`wl-clipboard` to paste username into clipboard and password to primary selection.
 
 The clipboard is emptied after 10s when working with passwords or one-time-passwords
 
