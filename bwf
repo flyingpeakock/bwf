@@ -54,6 +54,7 @@ _bwf_fzf_command () {
        # Edit this if you don't use tmux and want to change the appearance
        fzf --exit-0 --height=25% --layout=reverse --preview-window $preview_options --bind=ctrl-p:toggle-preview --preview "$preview" "$@"
     fi
+    fzf --exit-0 --preview-window $preview_options --bind=ctrl-p:toggle-preview --preview "$preview" "$@"
 }
 
 # @description gets the id of the selected item
@@ -177,9 +178,9 @@ bwf() {
 
     # set xflag if not through a pipe
     if [ -t 1 ]; then
-        xflag=1
+        local xflag=1
     else
-        xflag=0
+        local xflag=0
     fi
 
     if ! _bwf_need bw; then
