@@ -14,17 +14,16 @@ OPTIONS
     -h, --help          display this help message
     -p, --password      select password
     -u, --username      select username 
+    -b, --both          select username and password
     -n, --notes         select notes
     -t, --totp          select one time password
 
-If neither \`-p\` and \`-u\` are not defined, \`-u\` is set
+If either \`-p\`, \`-b\` and \`-u\` are not defined, \`-b\` is set
 If both \`-s\` and \`-x\` are set the last one takes precedence
 If this program thinks it is running through a pipe -s is set by default
 
 CLIPBOARD
-    Uses xclip/wl-clipboard to paste username into clipboard and
-    password to primary selection.
-
+    Uses xclip/wl-clipboard to paste into clipboard
     The clipboard is emptied after 10s
 
 PREVIEW
@@ -99,7 +98,7 @@ bwf_getuser () {
     if [ "$#" -gt 0 ] && [ -z "$1" ]; then
         item=$*
     else
-        bwf_getitem
+        bwf_getitem || return 1
     fi
     jq -r 'map(select(.id == "'"$item"'")) | .[] .login.username' \
         <<< "${allItems}"
@@ -110,7 +109,7 @@ bwf_getpassword () {
     if [ "$#" -gt 0 ] && [ -z "$1" ]; then
         item=$*
     else
-        bwf_getitem
+        bwf_getitem || return 1
     fi
     jq -r 'map(select(.id == "'"$item"'")) | .[] | .login.password' \
             <<< "${allItems}"
@@ -121,7 +120,7 @@ bwf_gettotp () {
     if [ "$#" -gt 0 ] && [ -z "$1" ]; then
       item=$*
     else
-      bwf_getitem
+      bwf_getitem || return 1
     fi
     bw get totp "$item"
 }
@@ -131,7 +130,7 @@ bwf_getnotes () {
    if [ "$#" -gt 0 ] && [ -z "$1" ]; then
       item=$*
    else
-      bwf_getitem
+      bwf_getitem || return 1
    fi
    jq -r 'map(select(.id == "'"$item"'")) | .[] | .notes' \
          <<< "${allItems}"
@@ -163,8 +162,14 @@ bwf_unlock() {
 bwf_copy_xclip() {
     xclip --selection clipboard -i
 }
+bwf_copy_p_xclip() {
+    xclip --selection primary -i
+}
 bwf_copy_wl() {
     wl-copy -t "text/plain"
+}
+bwf_copy_p_wl() {
+    wl-copy -t "text/plain" -p
 }
 
 bwf() {
@@ -175,6 +180,7 @@ bwf() {
 
     uflag=0
     pflag=0
+    bflag=0
     nflag=0
     tflag=0
     cflag=0
@@ -219,6 +225,10 @@ bwf() {
                 pflag=1
                 shift
             ;;
+            (-b|--both)
+                bflag=1
+                shift
+            ;;
             (-n|--notes)
                 nflag=1
                 shift
@@ -252,6 +262,7 @@ bwf() {
             else
                 bwf_emptyclipboard=bwf_emptyclipboard_wl
                 copy_command=bwf_copy_wl
+                copy_p_command=bwf_copy_p_wl
             fi
         elif [[ $XDG_SESSION_TYPE == "x11" ]]; then
             if ! need xclip; then
@@ -259,7 +270,8 @@ bwf() {
                 return 1
             else
                 bwf_emptyclipboard=bwf_copy_xclip
-                copy_command="xclip -selection clipboard -i"
+                copy_command=bwf_copy_xclip
+                copy_p_command=bwf_copy_p_xclip
             fi
         fi
     fi
@@ -270,10 +282,21 @@ bwf() {
         account="$*"
     fi
 
-    bwf_getitem
+    bwf_getitem || return 1
 
-    # show username per default
-    if [ $uflag -gt 0 ] || ([ $uflag -eq 0 ] && [ $pflag -eq 0 ] && [ $nflag -eq 0 ] && [ $tflag -eq 0 ]) ; then
+    # show both per default
+    if [ $bflag -gt 0 ] || ([ $bflag -eq 0 ] && [ $uflag -eq 0 ] && [ $pflag -eq 0 ] && [ $nflag -eq 0 ] && [ $tflag -eq 0 ]) ; then
+        if [ $xflag -gt 0 ]; then
+            bwf_getuser "$item" | $copy_p_command | echo "✔ username copied to primary clipboard"
+            bwf_getpassword "$item" | $copy_command | echo "✔ password copied to clipboard"
+            $bwf_emptyclipboard&
+        else
+            bwf_getuser "$item"
+            bwf_getpassword "$item"
+        fi
+    fi
+
+    if [ $uflag -gt 0 ]; then
         if [ $xflag -gt 0 ]; then
             bwf_getuser "$item" | $copy_command | echo "✔ username copied to clipboard"
         else
@@ -284,7 +307,7 @@ bwf() {
     if [ $pflag -gt 0 ]; then
         if [ $xflag -gt 0 ]; then
             bwf_getpassword "$item" | $copy_command | echo "✔ password copied to clipboard"
-            $bwf_emptyclipboard
+            $bwf_emptyclipboard&
         else
             bwf_getpassword "$item"
         fi
@@ -301,7 +324,7 @@ bwf() {
     if [ $tflag -gt 0 ]; then
         if [ $xflag -gt 0 ]; then
             bwf_gettotp "$item" | $copy_command | echo "✔ onetime password copied to clipboard"
-            $bwf_emptyclipboard
+            $bwf_emptyclipboard&
         else
             bwf_gettotp "$item"
         fi
